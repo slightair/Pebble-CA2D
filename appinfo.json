@@ -1,0 +1,19 @@
+{
+    "appKeys": {},
+    "capabilities": [
+        ""
+    ],
+    "companyName": "arksutite@gmail.com",
+    "longName": "CA2D",
+    "projectType": "native",
+    "resources": {
+        "media": []
+    },
+    "shortName": "CA2D",
+    "uuid": "784797c6-22da-4803-b134-4095e53a3b43",
+    "versionCode": 1,
+    "versionLabel": "1.0",
+    "watchapp": {
+        "watchface": true
+    }
+}
