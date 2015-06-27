@@ -1,5 +1,7 @@
 #include <pebble.h>
 
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
+  
 static int s_seed;
 static Window *s_main_window;
 static TextLayer *s_time_layer;
@@ -7,9 +9,16 @@ static Layer *s_ca_layer;
 static char *s_board;
 static int s_step;
 
-#define NUM_CELLS 18
-#define CELL_SIZE 8
-
+#ifdef PBL_PLATFORM_BASALT
+  #define NUM_CELLS 36
+  #define CELL_SIZE 4
+  #define EMERGING_VALUE 8
+#else
+  #define NUM_CELLS 18
+  #define CELL_SIZE 8
+  #define EMERGING_VALUE 16
+#endif
+  
 // Star Wars 345/2/4
 #define SURVIVE ((1 << 2) + (1 << 3) + (1 << 4))
 #define BORN 2
@@ -20,6 +29,16 @@ static int random() {
 	s_seed = (((s_seed * 214013L + 2531011L) >> 16) & 32767);
 	return s_seed;
 }
+
+#ifdef PBL_COLOR
+static GColor GColorFromCMYK(int cyan, int magenta, int yellow, int black) {
+  int red   = 255 - MIN(255, cyan    * (255 - black)) + black;
+  int green = 255 - MIN(255, magenta * (255 - black)) + black;
+  int blue  = 255 - MIN(255, yellow  * (255 - black)) + black;
+
+  return GColorFromRGB(red, green, blue);
+}
+#endif
 
 static void update_time() {
   time_t current_time = time(NULL);
@@ -40,7 +59,7 @@ static void shuffle_board() {
     for (int y = 0; y<NUM_CELLS; y++) {
       int index = y * NUM_CELLS + x;
       
-      if (random() % 16 == 0) {
+      if (random() % EMERGING_VALUE == 0) {
         s_board[index] = CONDITIONS - 1;
       } else {
         s_board[index] = 0;
@@ -211,10 +230,22 @@ static void tick_board() {
 }
 
 static void ca_update_callback(Layer *me, GContext *context) {
-  graphics_context_set_fill_color(context, GColorWhite);
-  
   tick_board();
-  
+
+#ifdef PBL_COLOR
+  for (int x = 0; x<NUM_CELLS; x++) {
+    for (int y = 0; y<NUM_CELLS; y++) {
+      char status = s_board[y * NUM_CELLS + x];
+      if (status > 0) {
+        int magenta = 255 - (255 / (CONDITIONS - 1) * status);
+        GColor color = GColorFromCMYK(0, magenta, 255, 0);
+        graphics_context_set_fill_color(context, color);
+        graphics_fill_rect(context, GRect(CELL_SIZE * x, CELL_SIZE * y, CELL_SIZE, CELL_SIZE), 0, GCornerNone);
+      }
+    }
+  }
+#else
+  graphics_context_set_fill_color(context, GColorWhite);  
   for (int x = 0; x<NUM_CELLS; x++) {
     for (int y = 0; y<NUM_CELLS; y++) {
       char status = s_board[y * NUM_CELLS + x];
@@ -222,7 +253,8 @@ static void ca_update_callback(Layer *me, GContext *context) {
         graphics_fill_circle(context, GPoint(CELL_SIZE / 2 + CELL_SIZE * x, CELL_SIZE / 2 + CELL_SIZE * y), status);   
       }
     }
-  }  
+  }
+#endif
 }
 
 static void main_window_load(Window *window) {

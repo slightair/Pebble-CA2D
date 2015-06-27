@@ -9,10 +9,14 @@
     "resources": {
         "media": []
     },
+    "sdkVersion": "3",
     "shortName": "CA2D",
+    "targetPlatforms": [
+        "aplite",
+        "basalt"
+    ],
     "uuid": "784797c6-22da-4803-b134-4095e53a3b43",
-    "versionCode": 1,
-    "versionLabel": "1.0",
+    "versionLabel": "2.0",
     "watchapp": {
         "watchface": true
     }
