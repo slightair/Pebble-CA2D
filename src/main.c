@@ -2,7 +2,6 @@
 
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
   
-static int s_seed;
 static Window *s_main_window;
 static TextLayer *s_time_layer;
 static Layer *s_ca_layer;
@@ -25,11 +24,6 @@ static int s_step;
 #define CONDITIONS 4
 #define STEP_MAX 100
   
-static int random() {
-	s_seed = (((s_seed * 214013L + 2531011L) >> 16) & 32767);
-	return s_seed;
-}
-
 #ifdef PBL_COLOR
 static GColor GColorFromCMYK(int cyan, int magenta, int yellow, int black) {
   int red   = 255 - MIN(255, cyan    * (255 - black)) + black;
@@ -59,7 +53,7 @@ static void shuffle_board() {
     for (int y = 0; y<NUM_CELLS; y++) {
       int index = y * NUM_CELLS + x;
       
-      if (random() % EMERGING_VALUE == 0) {
+      if (rand() % EMERGING_VALUE == 0) {
         s_board[index] = CONDITIONS - 1;
       } else {
         s_board[index] = 0;
@@ -269,8 +263,16 @@ static void main_window_load(Window *window) {
   
   s_time_layer = text_layer_create(GRect(0, 144, 144, 24));
 
-  text_layer_set_background_color(s_time_layer, GColorWhite);
-  text_layer_set_text_color(s_time_layer, GColorBlack);
+#ifdef PBL_COLOR
+  GColor background_color = GColorDarkGray;
+  GColor text_color = GColorWhite;
+#else
+  GColor background_color = GColorWhite;
+  GColor text_color = GColorBlack;
+#endif
+  
+  text_layer_set_background_color(s_time_layer, background_color);
+  text_layer_set_text_color(s_time_layer, text_color);
 
   text_layer_set_font(s_time_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
   text_layer_set_text_alignment(s_time_layer, GTextAlignmentCenter);
@@ -289,7 +291,10 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
 }
 
 static void init() {
-  s_seed = time(NULL);
+#ifdef PBL_PLATFORM_APLITE
+  srand(time(NULL));
+#endif
+
   s_board = malloc(NUM_CELLS * NUM_CELLS * sizeof(char));
   s_step = 0;
 
